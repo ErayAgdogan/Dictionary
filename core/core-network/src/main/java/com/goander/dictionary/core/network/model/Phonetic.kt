@@ -1,4 +1,4 @@
-package com.goander.dictionary.data.remote
+package com.goander.dictionary.core.network.model
 
 data class Phonetic(
     val audio: String,

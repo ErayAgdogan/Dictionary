@@ -3,7 +3,8 @@ package com.goander.dictionary.di
 import android.content.Context
 import com.goander.dictionary.data.local.AppDatabase
 import com.goander.dictionary.data.local.SearchHistoryDao
-import com.goander.dictionary.data.remote.DictionaryApi
+import com.goander.dictionary.core.network.DictionaryApi
+
 import com.goander.dictionary.repository.DictionaryRepository
 import com.goander.dictionary.utility.DICTIONARY_URL
 import com.goander.dictionary.utility.NetworkConnectivityObserver
