@@ -51,7 +51,7 @@ public fun StartScreen(
                         .align(Alignment.CenterStart)
                         .padding(start = 68.dp),
                     text = stringResource(id = R.string.ictionary),
-                    fontSize = 24.sp,
+                    style = MaterialTheme.typography.headlineSmall
                 )
 
                 Icon(
@@ -105,7 +105,7 @@ public fun StartScreen(
                       },
                   text = stringResource(id = R.string.searching),
                   fontWeight = FontWeight.Bold,
-                  fontSize = 40.sp
+                  style = MaterialTheme.typography.displaySmall
               )
 
               Text(
@@ -118,10 +118,8 @@ public fun StartScreen(
                       },
                   text = stringResource(id = R.string.Start),
                   fontWeight = FontWeight.Bold,
-                  fontSize = 40.sp,
+                  style = MaterialTheme.typography.displaySmall
               )
-
-
           }
     }
 }

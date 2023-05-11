@@ -5,4 +5,17 @@
     <string name="start">start</string>
     <string name="searching">searching</string>
     <string name="Start">Start</string>
+    <string name="index">%d.\u0020</string>
+    <string name="example">example:\u0020</string>
+    <string name="back_to_main_screen">back to main screen</string>
+    <string name="title_activity_process_text">ProcessTextActivity</string>
+    <!-- Strings used for fragments for navigation -->
+    <string name="first_fragment_label">First Fragment</string>
+    <string name="second_fragment_label">Second Fragment</string>
+    <string name="next">Next</string>
+    <string name="previous">Previous</string>
+
+
+    <string name="save_the_word">save the word</string>
+    <string name="no_result">No result</string>
 </resources>

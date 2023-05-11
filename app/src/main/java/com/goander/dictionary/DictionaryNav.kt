@@ -13,8 +13,8 @@ import androidx.navigation.compose.rememberNavController
 import com.goander.dictionary.DictionaryNav.SEARCH_DESTINATION
 import com.goander.dictionary.DictionaryNav.SETTINGS_DESTINATION
 import com.goander.dictionary.DictionaryNav.START_DESTINATION
-import com.goander.dictionary.ui.search.SearchScreen
-import com.goander.dictionary.ui.setting.SettingScreen
+import com.goander.dictionary.search.SearchScreen
+import com.goander.dictionary.settings.SettingScreen
 import com.goander.dictionary.ui.start.StartScreen
 
 private object DictionaryNav {
@@ -44,10 +44,11 @@ public fun DirectoryNav(
             )
         }
         composable(SETTINGS_DESTINATION) {
-            SettingScreen()
+            SettingScreen(viewModel = hiltViewModel())
         }
         composable(SEARCH_DESTINATION) {
-            SearchScreen(hiltViewModel())
+            SearchScreen(searchViewModel = hiltViewModel())
         }
+
     }
 }

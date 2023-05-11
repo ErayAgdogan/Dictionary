@@ -21,7 +21,9 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
       //  WindowCompat.setDecorFitsSystemWindows(window, false)
       //  window.statusBarColor = Color(0x00000000).toArgb()
+
         setContent {
+
 
             DictionaryTheme {
 

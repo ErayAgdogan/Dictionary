@@ -6,4 +6,10 @@
         <item name="android:windowLightStatusBar">?attr/isLightTheme</item>
         <item name="android:windowTranslucentStatus">true</item>
     </style>
+
+    <style name="Theme.Dictionary.Dialog" parent="Theme.Material3.DayNight.Dialog">
+        <item name="android:windowIsTranslucent">true</item>
+        <item name="android:windowBackground">@android:color/transparent</item>
+
+    </style>
 </resources>
