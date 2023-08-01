@@ -3,7 +3,6 @@ package com.goander.dictionary.database.entity
 import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.ForeignKey
-import androidx.room.ForeignKey.CASCADE
 import androidx.room.Index
 import androidx.room.PrimaryKey
 
@@ -14,7 +13,7 @@ import androidx.room.PrimaryKey
             entity = MeaningEntity::class,
             parentColumns = ["id"],
             childColumns = ["meaning_id"],
-            onDelete = CASCADE
+            onDelete = ForeignKey.CASCADE
         ),
 
     ],
@@ -34,5 +33,5 @@ data class DefinitionEntity(
     val definition: String,
 
     @ColumnInfo(name = "example")
-    val example: String,
+    val example: String?,
 )

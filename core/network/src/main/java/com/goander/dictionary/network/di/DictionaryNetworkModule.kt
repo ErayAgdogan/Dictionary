@@ -1,6 +1,6 @@
 package com.goander.dictionary.network.di
 
-import com.goander.dictionary.network.DictionaryNetwork
+import com.goander.dictionary.network.DictionaryNetworkDataSourceImpl
 import com.goander.dictionary.network.DictionaryNetworkDataSource
 import dagger.Module
 import dagger.Provides
@@ -14,7 +14,9 @@ object DictionaryNetworkModule {
 
     @Provides
     @Singleton
-    public fun providesDictionaryNetworkDataSource(dictionaryNetwork: DictionaryNetwork): DictionaryNetworkDataSource {
+    public fun providesDictionaryNetworkDataSource(
+        dictionaryNetwork: DictionaryNetworkDataSourceImpl
+    ): DictionaryNetworkDataSource {
         return dictionaryNetwork
     }
 }

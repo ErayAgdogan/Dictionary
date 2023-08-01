@@ -1,0 +1,13 @@
+syntax = "proto3";
+
+option java_package = "com.goander.dictionary.core.datastore";
+option java_multiple_files = true;
+
+message UserPreferences {
+  string font = 1;
+  int32 theme_color = 2;
+  bool show_examples = 3;
+  bool show_synonyms = 4;
+  bool show_antonyms = 5;
+
+}

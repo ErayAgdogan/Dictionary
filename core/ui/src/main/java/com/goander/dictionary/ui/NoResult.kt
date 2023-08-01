@@ -15,7 +15,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.goander.dictionary.design.DictionaryIcon
-import com.goander.dictionary.design.DictionaryString
 
 @Composable
 public fun NoResult(modifier: Modifier) {
@@ -29,10 +28,10 @@ public fun NoResult(modifier: Modifier) {
             horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             Icon(
                 painter = painterResource(id = DictionaryIcon.SearchOff),
-                contentDescription = stringResource(id = DictionaryString.NoResult)
+                contentDescription = stringResource(id = R.string.no_result)
             )
             Text(
-                text = stringResource(id = DictionaryString.NoResult),
+                text = stringResource(id = R.string.no_result),
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold
             )

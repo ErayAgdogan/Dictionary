@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="show_synonyms">Show synonyms</string>
+    <string name="show_antonyms">Show antonyms</string>
+    <string name="history_and_caching">History and Caching</string>
+    <string name="delete_search_history">Delete search history</string>
+    <string name="delete_caches">Delete caches</string>
+    <string name="delete_caches_message">This action will delete all cached data for offline use.</string>
+    <string name="delete_search_history_message">This action will delete all search history.</string>
+    <string name="all_caches_deleted">All caches deleted.</string>
+    <string name="all_search_history_deleted">All search history deleted.</string>
+    <string name="Default">Default</string>
+    <string name="serif">Serif</string>
+    <string name="cursive">Cursive</string>
+    <string name="monospace">Monospace</string>
+    <string name="sans_serif">Sans serif</string>
+    <string name="dismiss">Dismiss</string>
+    <string name="confirm">Confirm</string>
+    <string name="theme">Theme</string>
+    <string name="typography">Typography</string>
+    <string name="dictionary">Dictionary</string>
+    <string name="show_examples">Show examples</string>
+    <string name="color">Color</string>
+    <string name="settings">Settings</string>
+    <string name="back_to_main_screen">back to main screen</string>
+
+
+</resources>

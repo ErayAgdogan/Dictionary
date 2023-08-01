@@ -11,11 +11,11 @@ data class DefinitionWithAntonymsAndSynonyms(
         parentColumn = "id",
         entityColumn = "definition_id"
     )
-    val antonyms: List<AntonymEntity>,
+    val antonyms: List<AntonymDefinitionEntity>,
 
     @Relation(
         parentColumn = "id",
         entityColumn = "definition_id"
     )
-    val synonyms: List<SynonymEntity>
+    val synonyms: List<SynonymDefinitionEntity>
 )

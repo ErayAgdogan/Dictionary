@@ -29,3 +29,5 @@ include(":core:datastore")
 
 include(":feature:search")
 include(":feature:settings")
+include(":core:theme")
+include(":feature:bookmark")

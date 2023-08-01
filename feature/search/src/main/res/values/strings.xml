@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="synonyms">Synonyms</string>
+    <string name="antonyms">Antonyms</string>
+    <string name="example">Example</string>
+    <string name="sources">Sources</string>
+    <string name="license">License</string>
+    <string name="name">Name</string>
+    <string name="url">Url</string>
+    <string name="bookmark_the_word">Bookmark the word</string>
+    <string name="back_to_main_screen">Back to main screen</string>
+</resources>

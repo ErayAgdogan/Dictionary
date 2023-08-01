@@ -1,101 +1,66 @@
 package com.goander.dictionary.search
 
-import android.app.Activity.RESULT_OK
-import android.app.PendingIntent
-import android.content.Intent
 import android.media.MediaPlayer
-import android.speech.RecognizerIntent
-import android.util.Log
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.IntentSenderRequest
-import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.*
-import androidx.compose.foundation.text.KeyboardActions
-import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.text.ClickableText
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.RectangleShape
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.ImeAction
-import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.paging.LoadState
+import androidx.paging.PagingData
+import androidx.paging.compose.collectAsLazyPagingItems
 import com.goander.dictionary.connectivity.NetworkConnectivityObserver
 import com.goander.dictionary.design.DictionaryIcon
-import com.goander.dictionary.design.DictionaryString
-import com.goander.dictionary.model.Definition
-import com.goander.dictionary.model.Phonetic
+import com.goander.dictionary.ui.ConnectionInformerBanner
 import com.goander.dictionary.ui.NoResult
 import com.goander.dictionary.ui.SearchResultItem
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
+import com.goander.dictionary.ui.launcherSpeechToText
+import kotlinx.coroutines.flow.Flow
 import java.util.*
-import kotlin.collections.List
-import kotlin.time.Duration.Companion.milliseconds
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 public fun SearchScreen(
+    navigateToBack: () -> Unit,
     searchViewModel: SearchViewModel = viewModel()
 ) {
 
-    val searchUIState by searchViewModel.searchUIState.collectAsStateWithLifecycle()
     val preSearchText by searchViewModel.preSearchText.collectAsStateWithLifecycle()
-    val isWordSaved by searchViewModel.isWordSaved.collectAsStateWithLifecycle()
+    val isWordBookmarked by searchViewModel.isWordBookmarked.collectAsStateWithLifecycle()
+
+    val showExamples by searchViewModel.showExamples.collectAsStateWithLifecycle()
+    val showSynonyms by searchViewModel.showSynonyms.collectAsStateWithLifecycle()
+    val showAntonyms by searchViewModel.showAntonyms.collectAsStateWithLifecycle()
 
     val snackbarHostState = remember { SnackbarHostState() }
-    val scope = rememberCoroutineScope()
-    val message = stringResource(id = DictionaryString.Example)
-
+    val showSearchHistory by searchViewModel.showSearchHistory.collectAsStateWithLifecycle()
     val networkConnectivity by searchViewModel.networkConnectivity
-        .collectAsState(NetworkConnectivityObserver.Status.Unavailable)
+        .collectAsStateWithLifecycle(NetworkConnectivityObserver.Status.Unavailable)
 
     val focusRequester = remember { FocusRequester() }
     LaunchedEffect(Unit) {
-        focusRequester.requestFocus()
-    }
-
-    // https://stackoverflow.com/a/70424733/15038120
-    val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH)
-    intent.putExtra(
-        RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM
-    )
-    intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE, Locale.ENGLISH.toLanguageTag())
-    val context = LocalContext.current
-
-    val pendIntent = PendingIntent.getActivity(context, 0, intent, 0)
-    val launcher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.StartIntentSenderForResult()
-    ) {
-        if (it.resultCode != RESULT_OK) {
-            return@rememberLauncherForActivityResult
-        }
-
-        //GET TEXT ARRAY FROM VOICE INTENT
-        val result = it.data?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)
-
-        if (result !== null) {
-            searchViewModel.search(result[0] ?: "")
-        }
+        if (showSearchHistory)
+            focusRequester.requestFocus()
     }
 
 
@@ -103,284 +68,459 @@ public fun SearchScreen(
         modifier = Modifier.fillMaxSize(),
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
-            Column(modifier = Modifier
-                .fillMaxWidth()
-                .wrapContentHeight()) {
 
-                ConnectionInformer(networkConnectivity)
-
-                Card(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .wrapContentHeight(),
-                        shape = RectangleShape
-                ) {
-                    TextField (
-                        leadingIcon = {
-                            IconButton(
-                                modifier = Modifier,
-                                onClick = {
-
-                            }) {
-                                Icon(
-                                    modifier = Modifier
-                                        .size(32.dp),
-                                    painter = painterResource(id = DictionaryIcon.Back),
-                                    contentDescription = stringResource(id = DictionaryString.BackToMainScreen)
-                                )
-                            }
-
+            TopSearchBar(
+                isConnectionAvailable = networkConnectivity == NetworkConnectivityObserver.Status.Available,
+                onSpeechToTextRequest = launcherSpeechToText(onTextReceived = searchViewModel::search),
+                focusRequester = focusRequester,
+                preSearchText = preSearchText,
+                setPreSearchText = searchViewModel::setPreSearchText,
+                isActive = showSearchHistory,
+                onActiveChanged = searchViewModel::showSearchHistory,
+                search = searchViewModel::search,
+                navigateToBack = navigateToBack,
+                searchHistoryContent = {
+                    SearchHistory(
+                        preSearchText = preSearchText,
+                        searchHistoryPaging = searchViewModel.searchHistoryPaging,
+                        onSelected = { search ->
+                            searchViewModel.showSearchHistory(false)
+                            searchViewModel.search(search)
                         },
-                        trailingIcon = {
-                            IconButton(
-                                modifier = Modifier,
-                                onClick = {
-                                launcher.launch(
-                                    IntentSenderRequest
-                                        .Builder(pendIntent)
-                                        .build()
-                                )
-                            }) {
-
-                                Icon(
-                                    modifier = Modifier
-                                        .size(32.dp),
-                                    painter = painterResource(id = DictionaryIcon.Mic),
-                                    contentDescription = ""
-                                )
-                            }
-
-                        },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(56.dp)
-                            .focusRequester(focusRequester)
-                            ,
-                        colors = TextFieldDefaults.textFieldColors(
-                            focusedIndicatorColor = Color.Transparent,
-                            unfocusedIndicatorColor = Color.Transparent,
-                            disabledIndicatorColor = Color.Transparent
-                        ),
-                        value = preSearchText,
-                        onValueChange = searchViewModel::setPreSearchText,
-                        singleLine = true,
-                        keyboardOptions = KeyboardOptions.Default.copy(
-                            keyboardType = KeyboardType.Text,
-                            imeAction = ImeAction.Done
-                        ),
-                        keyboardActions = KeyboardActions(onDone = {
-                            preSearchText.let(searchViewModel::search)
-                        })
+                        onDelete = { id ->
+                            searchViewModel.deleteSearch(id)
+                        }
                     )
-                }
-            }
-
+            })
         }
     ) {
-        when(val localSearchUIState = searchUIState) {
-            is SearchUIState.Loading -> Box(
-                modifier = Modifier
-                    .padding(it)
-                    .fillMaxSize()
+
+        DictionaryComposable(
+            modifier = Modifier
+                .padding(it)
+                .fillMaxSize(),
+            dictionaryPage = searchViewModel.searchUIState,
+            isWordBookmarked = isWordBookmarked,
+            onBookmarkWord = searchViewModel::bookmarkWord,
+            showExamples = showExamples,
+            showSynonyms = showSynonyms,
+            showAntonyms = showAntonyms
+        )
+    }
+
+
+}
+
+@Composable
+private fun DictionaryComposable(
+    modifier: Modifier,
+    // pass flow of paging data to composable
+    // https://developer.android.com/reference/kotlin/androidx/paging/compose/LazyPagingItems
+    dictionaryPage: Flow<PagingData<DictionaryItem>>,
+    isWordBookmarked: Boolean,
+    onBookmarkWord: () -> Unit,
+    showExamples: Boolean,
+    showSynonyms: Boolean,
+    showAntonyms: Boolean
+) {
+    val dictionaryPageItems = dictionaryPage.collectAsLazyPagingItems()
+
+    if (dictionaryPageItems.loadState.refresh is LoadState.Loading ||
+        dictionaryPageItems.loadState.append is LoadState.Loading ||
+        dictionaryPageItems.loadState.prepend is LoadState.Loading)
+        Loading(modifier)
+    else if (dictionaryPageItems.loadState.append.endOfPaginationReached && dictionaryPageItems.itemCount == 0)
+        NoResult(modifier = modifier)
+    else if (dictionaryPageItems.itemCount > 0)
+        SelectionContainer {
+            LazyColumn(
+                modifier = modifier,
+                contentPadding = PaddingValues(24.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
-            }
-            is SearchUIState.NoResult -> NoResult(
-                modifier = Modifier
-                    .padding(it)
-                    .fillMaxSize()
-            )
-            is SearchUIState.ShowSearchHistory -> LazyColumn(
-                modifier = Modifier
-                    .padding(it)
-                    .fillMaxSize()
-            ){
-                items(localSearchUIState.searchHistoryList, key = {it.id}) { searchHistory ->
-                    SearchResultItem(
-                        modifier = Modifier
-                        .clickable { searchViewModel.search(searchHistory.search) }
-                        .animateItemPlacement(),
-                        searchResult = searchHistory.search,
-                        searchedText = localSearchUIState.searchedText,
-                        ignoreCaseOnHighLight = true,
-                        onDelete = { searchViewModel.deleteSearch(searchHistory.id) }
-                    )
-                }
-            }
-
-            is SearchUIState.Result -> SelectionContainer {
-                LazyColumn(
-                    modifier = Modifier
-                        .padding(it),
-                    contentPadding = PaddingValues(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
-
-                ) {
-
-                    itemWord(
-                        word = localSearchUIState.dictionary.word,
-                        isWordSaved = isWordSaved,
-                        onSaveWord = {
-                            scope.launch {
-                                searchViewModel.saveDictionary(localSearchUIState.dictionary)
-                            }
-                    })
-
-                    itemsPhonetics(localSearchUIState.dictionary.phonetics) { source ->
-                        try {
-                            MediaPlayer().run {
-                                reset()
-                                setDataSource(source)
-                                prepare()
-                                start()
-                            }
-                        }catch (e:Exception) {
-
-                        }
-                        scope.launch {
-                            snackbarHostState.showSnackbar(
-                                message = message,
-                                duration = SnackbarDuration.Short
+                if(dictionaryPageItems.itemCount > 0)
+                    items(count = dictionaryPageItems.itemCount) {
+                        when (val item = dictionaryPageItems[it]) {
+                            is DictionaryItem.ItemWord -> Word(
+                                word = item.word,
+                                isWordBookmarked = isWordBookmarked,
+                                onBookmarkWord = onBookmarkWord
                             )
+                            is DictionaryItem.ItemPhonetic -> Phonetic(
+                                text = item.text,
+                                audio = item.audioSource
+                            )
+
+                            is DictionaryItem.ItemMeaning -> Meaning(
+                                index = item.index,
+                                partOfSpeech = item.partOfSpeech
+                            )
+                            is DictionaryItem.ItemDefinition -> Definition(
+                                index = item.index,
+                                definition = item.definition,
+                                example = item.example,
+                                synonyms = item.synonyms,
+                                antonyms = item.antonyms,
+                                showExamples = showExamples,
+                                showSynonyms = showSynonyms,
+                                showAntonyms = showAntonyms
+                            )
+                            DictionaryItem.ItemSourceLabel -> SourceLabel()
+                            is DictionaryItem.ItemSource -> Source(sourceUrl = item.url)
+                            DictionaryItem.ItemLicenseLabel -> {   }
+                            is DictionaryItem.ItemLicense -> { }
+                            null -> {}
                         }
                     }
 
-                    localSearchUIState.dictionary.meanings.forEach { meaning->
-                        itemPartOfSpeech(meaning.partOfSpeech)
-                        itemsDefinitions(meaning.definitions)
-                    }
-
-                }
             }
         }
+}
+
+@Composable
+private fun Loading(modifier: Modifier) {
+    Box(
+        modifier = modifier
+    ) {
+        CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun TopSearchBar(
+    isConnectionAvailable: Boolean,
+    onSpeechToTextRequest: () -> Unit,
+    focusRequester: FocusRequester,
+    preSearchText: String,
+    setPreSearchText: (String) -> Unit,
+    search: (String) -> Unit,
+    isActive: Boolean,
+    onActiveChanged: (Boolean) -> Unit,
+    navigateToBack: () -> Unit,
+    searchHistoryContent: @Composable ColumnScope.() -> Unit,
+) {
+    val searchBarPadding by animateDpAsState(targetValue = if (isActive) 0.dp else 16.dp)
+
+    Column(modifier = Modifier
+        .fillMaxWidth()
+        .wrapContentHeight()) {
+
+        ConnectionInformerBanner(isConnectionAvailable)
 
 
-public fun LazyListScope.itemWord(word: String, isWordSaved: Boolean, onSaveWord: () -> Unit) =
-    item {
-        Row (
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ){
-            Text(
-                text = word,
-                style = MaterialTheme.typography.headlineMedium,
-                fontWeight = FontWeight.Black
-            )
+                SearchBar(
+                    modifier = Modifier
+                        .padding(searchBarPadding)
 
-            IconButton(onClick = {
-                onSaveWord()
+                        .focusRequester(focusRequester),
+                    query = preSearchText,
+                    onQueryChange = {
+                        if (!isActive) onActiveChanged(true)
+                        setPreSearchText(it)
+                    },
+                    onSearch = {
+                        onActiveChanged(false)
+                        preSearchText.let(search)
+                    },
+                    active = isActive,
+                    onActiveChange = onActiveChanged,
+                    leadingIcon = {
 
-            }) {
-                Icon(
-                    painter = painterResource(id =
-                    if (isWordSaved) DictionaryIcon.BookMark
-                    else DictionaryIcon.BookMarkBorder
-                    ),
-                    contentDescription = stringResource(id = DictionaryString.SaveTheWord)
+                        IconButton(
+                            modifier = Modifier,
+                            onClick = navigateToBack) {
+                            Icon(
+                                modifier = Modifier
+                                    .size(32.dp),
+                                painter = painterResource(id = DictionaryIcon.Back),
+                                contentDescription = stringResource(id = R.string.back_to_main_screen)
+                            )
+                        }
+                    },
+                    trailingIcon = {
+                        IconButton(
+                            modifier = Modifier,
+                            onClick = {
+                               onSpeechToTextRequest()
+                            }) {
+
+                            Icon(
+                                modifier = Modifier
+                                    .size(32.dp),
+                                painter = painterResource(id = DictionaryIcon.Mic),
+                                contentDescription = ""
+                            )
+                        }
+                    },
+                content = searchHistoryContent
                 )
-            }
 
-        }
+        Divider(
+            Modifier
+                .height(2.dp)
+                .fillMaxWidth())
     }
 
-public inline fun LazyListScope.itemsPhonetics(
-    phonetics: List<Phonetic>,
-    crossinline onMediaPlay: (source: String) -> Unit
-) =
-    items(phonetics) { phonetic ->
-        Row (horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+}
 
-            Text(
-                text = phonetic.text,
-                style = MaterialTheme.typography.bodyLarge,
-                fontWeight = FontWeight.Light
-            )
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+private fun SearchHistory(
+    preSearchText: String,
+    searchHistoryPaging: Flow<PagingData<SearchHistoryItem>>,
+    onSelected: (String) -> Unit,
+    onDelete: (Long) -> Unit
+) {
+    val searchHistoryPagingItems = searchHistoryPaging.collectAsLazyPagingItems()
+    var firstLoading: Boolean by remember{ mutableStateOf(true) }
+    if (searchHistoryPagingItems.loadState.refresh == LoadState.Loading  && firstLoading
+         ){
+        Loading(modifier = Modifier.fillMaxSize())
+    } else {
+        firstLoading = false
+        LazyColumn(modifier = Modifier.fillMaxSize()) {
 
-            if (phonetic.audio.isNotBlank())
-                IconButton(
-                    modifier = Modifier.size(24.dp),
-                    onClick = {
+            items(
+                count = searchHistoryPagingItems.itemCount,
+                key = { (searchHistoryPagingItems[it] as? SearchHistoryItem.ItemSearchHistory?)?.searchId?:-1 },
 
-                        onMediaPlay(phonetic.audio)
+            ) {
+                val searchHistoryItem = searchHistoryPagingItems[it]
+                when(val item = searchHistoryItem){
+                    is SearchHistoryItem.ItemSearchHistory -> {
+                        SearchResultItem(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    onSelected(item.search)
+                                }
+                                .animateItemPlacement(),
+                            searchResult = item.search,
+                            searchedText = preSearchText,
+                            onDelete = {
+                                onDelete(item.searchId)
+                            })
 
+                    }
+                    null -> {
 
-                    }) {
-                    Icon(
-                        painter = painterResource(id = DictionaryIcon.VolumeUp),
-                        contentDescription = "",
+                    }
+                }
+
+            }
+            if (searchHistoryPagingItems.loadState.append == LoadState.Loading)
+                item {
+                    Loading(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .wrapContentHeight()
                     )
                 }
 
 
         }
-
     }
-
-public fun LazyListScope.itemPartOfSpeech(partOfSpeech: String) =
-    item {
-        Text(
-            text = partOfSpeech,
-            color = MaterialTheme.colorScheme.primary
-        )
-    }
-
-public fun LazyListScope.itemsDefinitions(definitions: List<Definition>) =
-    itemsIndexed(definitions) { index, definition ->
-        Text(
-            modifier = Modifier.padding(start = 16.dp),
-            text = buildAnnotatedString {
-                withStyle(style = SpanStyle(color = MaterialTheme.colorScheme.primary)) {
-                    append(stringResource(id = DictionaryString.Index, index + 1))
-                }
-                append(definition.definition)
-
-                if (definition.example.isNotBlank()) {
-                    append("\n")
-                    withStyle(style = SpanStyle(color = MaterialTheme.colorScheme.primary)) {
-                        append(stringResource(id = DictionaryString.Example))
-                    }
-                    append("\"${definition.example}\"")
-                }
-            }
-        )
-    }
-
+}
 
 
 @Composable
-public fun ConnectionInformer(networkConnectivity: NetworkConnectivityObserver.Status) {
-    var shouldBannerVisible by rememberSaveable {
-        mutableStateOf(false)
+private fun Word(
+    word: String,
+    isWordBookmarked: Boolean,
+    onBookmarkWord: () -> Unit,
+
+) {
+    Row (
+        modifier = Modifier
+            .fillMaxWidth()
+        ,
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ){
+        Text(
+            modifier = Modifier.padding(vertical = 8.dp),
+            text = word,
+            style = MaterialTheme.typography.headlineLarge,
+            fontWeight = FontWeight.Black
+        )
+
+        IconButton(
+            onClick = {
+                onBookmarkWord()
+            }) {
+            Icon(
+                painter = painterResource(id =
+                if (isWordBookmarked) DictionaryIcon.BookMark
+                else DictionaryIcon.BookMarkBorder
+                ),
+                contentDescription = stringResource(id = R.string.bookmark_the_word)
+            )
+        }
     }
-    LaunchedEffect(key1 = Unit, block = {
-        delay(200.milliseconds)
-        shouldBannerVisible = true
-    })
-    if (shouldBannerVisible)
-        AnimatedVisibility(visible = networkConnectivity != NetworkConnectivityObserver.Status.Available) {
-            Row(
-                modifier = Modifier
-                    .padding(8.dp)
-                    .fillMaxWidth()
-                    .wrapContentHeight()
-                    .animateContentSize(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
-            ) {
+}
+
+
+@Composable
+private fun Phonetic(text: String, audio: String?) {
+    Row (
+        modifier = Modifier
+            .fillMaxWidth(),
+    ) {
+
+        Text(
+            modifier = Modifier.padding(),
+            text = text,
+            style = MaterialTheme.typography.bodyLarge,
+            fontWeight = FontWeight.Light
+        )
+
+        if (audio?.isNotBlank() == true)
+            IconButton(
+                modifier = Modifier.size(24.dp),
+                onClick = {
+                        playMedia(audio)
+                }) {
                 Icon(
-                    painter = painterResource(id = DictionaryIcon.NoInternet),
-                    contentDescription = ""
-                )
-                Text(
-                    modifier = Modifier.wrapContentSize(),
-                    text = "connection unavailable",
+                    painter = painterResource(id = DictionaryIcon.VolumeUp),
+                    contentDescription = "",
+                    tint = MaterialTheme.colorScheme.primary
                 )
             }
-        }
-
-
-
+    }
 }
+
+private val mediaPlayer: MediaPlayer = MediaPlayer()
+private fun playMedia(sourceUrl: String) {
+    mediaPlayer.run {
+        reset()
+        setDataSource(sourceUrl)
+        prepare()
+        start()
+    }
+}
+
+
+@Composable
+private fun Meaning(index: String, partOfSpeech: String) {
+    Text(
+        modifier = Modifier.padding(vertical = 8.dp),
+        text = index + partOfSpeech,
+        color = MaterialTheme.colorScheme.primary,
+        fontWeight = FontWeight.Bold,
+        style = MaterialTheme.typography.titleMedium
+    )
+}
+
+@Composable
+private fun Definition(index: String,
+                       definition: String,
+                       example: String?,
+                       synonyms: String,
+                       antonyms: String,
+                       showExamples: Boolean,
+                       showSynonyms: Boolean,
+                       showAntonyms: Boolean) {
+    Text(
+        modifier = Modifier.padding(),
+        text = buildAnnotatedString {
+            appendPrimaryColoredText(text = index)
+            append(definition)
+
+            if (example?.isNotBlank() == true && showExamples) {
+                append("\n")
+                appendPrimaryColoredText(text = stringResource(id = R.string.example).lowercase())
+                append(example)
+            }
+            if (synonyms.isNotBlank() && showSynonyms) {
+                append("\n")
+                appendPrimaryColoredText(text = "${stringResource(
+                    id = R.string.synonyms).lowercase()}: ")
+                append(synonyms)
+            }
+
+            if (antonyms.isNotBlank() && showAntonyms) {
+                append("\n")
+                appendPrimaryColoredText(text = "${stringResource(id =
+                R.string.antonyms).lowercase()}: ")
+                append(antonyms)
+            }
+        }
+    )
+}
+
+@Composable
+private fun SourceLabel() {
+    Title(title = stringResource(id = R.string.sources))
+}
+
+@Composable
+public fun License(licenseName: String, licenseUrl: String) {
+    Column {
+        Title(title = stringResource(id = R.string.license))
+
+        Text(text = buildAnnotatedString {
+            withStyle(style = SpanStyle(color = MaterialTheme.colorScheme.primary)) {
+                append("${stringResource(id = R.string.name).lowercase()}: ")
+            }
+            append(licenseName)
+        })
+
+        val localUriHandler = LocalUriHandler.current
+        ClickableText(
+            text = buildAnnotatedString {
+                withStyle(style = SpanStyle(color = MaterialTheme.colorScheme.primary)) {
+                    append("${stringResource(id = R.string.url).lowercase()}: ")
+                }
+                append(licenseUrl)
+            },
+            style = MaterialTheme.typography.bodyLarge.copy(
+                color = MaterialTheme.colorScheme.onBackground,
+                textDecoration = TextDecoration.Underline
+            ),
+            onClick = {
+                localUriHandler.openUri(licenseUrl)
+            }
+        )
+    }
+}
+
+@Composable
+private fun Source(sourceUrl: String) {
+    val localUriHandler = LocalUriHandler.current
+    ClickableText(
+        text = buildAnnotatedString {
+            append(sourceUrl)
+        },
+        style = MaterialTheme.typography.bodyLarge.copy(
+            color = MaterialTheme.colorScheme.onBackground,
+            textDecoration = TextDecoration.Underline
+        ),
+        onClick = {
+            localUriHandler.openUri(sourceUrl)
+        }
+    )
+}
+
+@Composable
+private fun Title(title: String) {
+    Text(
+        modifier = Modifier.padding(vertical = 8.dp),
+        text = title,
+        style = MaterialTheme.typography.titleLarge,
+        color = MaterialTheme.colorScheme.primary
+    )
+}
+
+@Composable
+private fun AnnotatedString.Builder.appendPrimaryColoredText(text: String) {
+    withStyle(style = SpanStyle(color = MaterialTheme.colorScheme.primary)) {
+        append(text)
+    }
+}
+
+
+
+
+
 

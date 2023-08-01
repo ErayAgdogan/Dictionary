@@ -3,7 +3,6 @@ package com.goander.dictionary.database.entity
 import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.ForeignKey
-import androidx.room.ForeignKey.CASCADE
 import androidx.room.Index
 import androidx.room.PrimaryKey
 
@@ -14,7 +13,7 @@ import androidx.room.PrimaryKey
             entity = DictionaryEntity::class,
             parentColumns = ["id"],
             childColumns = ["dictionary_id"],
-            onDelete = CASCADE
+            onDelete = ForeignKey.CASCADE
         )
     ],
     indices = [
@@ -29,8 +28,11 @@ data class PhoneticEntity(
     val dictionaryId: Long,
 
     @ColumnInfo(name = "audio")
-    val audio: String,
+    val audio: String?,
 
     @ColumnInfo(name = "text")
-    val text: String
+    val text: String,
+
+    @ColumnInfo(name = "source_url")
+    val sourceUrl: String?
 )

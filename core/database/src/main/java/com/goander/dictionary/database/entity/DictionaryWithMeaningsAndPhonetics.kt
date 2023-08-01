@@ -19,7 +19,21 @@ data class DictionaryWithMeaningsAndPhonetics(
         parentColumn = "id",
         entityColumn = "dictionary_id"
     )
-    val phonetics: List<PhoneticEntity>,
+    val phonetics: List<PhoneticWithLicense>,
+
+    @Relation(
+        entity = DictionaryLicenseEntity::class,
+        parentColumn = "id",
+        entityColumn = "dictionary_id"
+    )
+    val license: DictionaryLicenseEntity?,
+
+    @Relation(
+        entity = SourceEntity::class,
+        parentColumn = "id",
+        entityColumn = "dictionary_id"
+    )
+    val sources: List<SourceEntity>
 
 )
 

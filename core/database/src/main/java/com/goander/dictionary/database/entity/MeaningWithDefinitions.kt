@@ -12,4 +12,19 @@ data class MeaningWithDefinitions(
         entityColumn = "meaning_id"
     )
     val definitions: List<DefinitionWithAntonymsAndSynonyms>,
+
+    @Relation(
+        entity = SynonymMeaningEntity::class,
+        parentColumn = "id",
+        entityColumn = "meaning_id"
+    )
+    val synonyms: List<SynonymMeaningEntity>,
+
+
+    @Relation(
+        entity = AntonymMeaningEntity::class,
+        parentColumn = "id",
+        entityColumn = "meaning_id"
+    )
+    val antonyms: List<AntonymMeaningEntity>,
 )

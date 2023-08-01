@@ -61,7 +61,7 @@ class NetworkConnectivityObserver @Inject constructor(
         }.distinctUntilChanged()
     }
 
-    enum class Status {
+    public enum class Status {
         Available, Unavailable, Losing, Lost
     }
 }

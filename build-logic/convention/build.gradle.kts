@@ -17,18 +17,26 @@ dependencies {
 
 gradlePlugin {
     plugins {
+        register("AndroidApplication") {
+            id = "com.goander.dictionary.android.application"
+            implementationClass = "AndroidApplicationConventionPlugin"
+        }
+
+        register("AndroidApplicationCompose") {
+            id = "com.goander.dictionary.android.application.compose"
+            implementationClass = "AndroidApplicationComposeConventionPlugin"
+        }
+        register("androidLibrary") {
+            id = "com.goander.dictionary.android.library"
+            implementationClass = "AndroidLibraryConventionPlugin"
+        }
         register("androidHilt") {
             id = "com.goander.dictionary.android.hilt"
             implementationClass = "AndroidHiltConventionPlugin"
         }
-
-        register("androidCompose") {
-            id = "com.goander.dictionary.android.compose"
-            implementationClass = "AndroidComposeConventionPlugin"
-        }
-        register("androidViewModelCompose") {
-            id = "com.goander.dictionary.android.viewmodel.compose"
-            implementationClass = "AndroidViewModelComposeConventionPlugin"
+        register("androidLibraryCompose") {
+            id = "com.goander.dictionary.android.library.compose"
+            implementationClass = "AndroidLibraryComposeConventionPlugin"
         }
     }
 }

@@ -1,6 +1,7 @@
 package com.goander.dictionary.repository.mapping
 
 import com.goander.dictionary.database.entity.*
+import com.goander.dictionary.database.entity.WordWithDictionaries
 import com.goander.dictionary.model.*
 
 fun SearchHistoryEntity.asSearchHistory() =
@@ -9,44 +10,30 @@ fun SearchHistoryEntity.asSearchHistory() =
         search = query
     )
 
-fun Dictionary.asEntity() =
-    DictionaryEntity(
-        word = word,
-        phonetic = phonetic,
-        origin = origin
-    )
-
-fun Meaning.asEntity(dictionaryId: Long) =
-    MeaningEntity(
-        dictionaryId = dictionaryId,
-        partOfSpeech = partOfSpeech
-    )
 
 fun MeaningWithDefinitions.asMeaning() =
     Meaning(
         partOfSpeech = meaning.partOfSpeech,
-        definitions = definitions.map { it.asDefinition() }
+        definitions = definitions.map { it.asDefinition() },
+        synonyms = synonyms.map { it.synonym },
+        antonyms = antonyms.map { it.antonym }
     )
 
-fun Phonetic.asEntity(dictionaryId: Long) =
-    PhoneticEntity(
-        dictionaryId = dictionaryId,
-        text = text,
-        audio = audio
-    )
 
-fun PhoneticEntity.asPhonetic() =
+fun PhoneticWithLicense.asPhonetic() =
     Phonetic(
-        audio = audio,
-        text = text
+        audio = phoneticEntity.audio,
+        text = phoneticEntity.text,
+        sourceUrl = phoneticEntity.sourceUrl,
+        license = licenseEntity?.asLicense()
     )
 
-fun Definition.asEntity(meaningId: Long) =
-    DefinitionEntity(
-        meaningId = meaningId,
-        definition = definition,
-        example = example
+fun PhoneticLicenseEntity.asLicense() =
+    License(
+        name = name,
+        url = url
     )
+
 
 fun DefinitionWithAntonymsAndSynonyms.asDefinition() =
     Definition(
@@ -56,12 +43,27 @@ fun DefinitionWithAntonymsAndSynonyms.asDefinition() =
         synonyms = synonyms.map { it.synonym }
     )
 
+fun DictionaryLicenseEntity.asLicense() =
+    License(
+        name = name,
+        url = url
+    )
+
 fun DictionaryWithMeaningsAndPhonetics.asDictionary() =
     Dictionary(
         id = dictionary.id,
-        word = dictionary.word,
-        origin = dictionary.origin,
-        phonetic = dictionary.phonetic,
+        phonetic = dictionary.phonetic?:"",
         phonetics = phonetics.map { it.asPhonetic() },
-        meanings = meanings.map { it.asMeaning()  }
+        meanings = meanings.map { it.asMeaning()  },
+        license = license?.asLicense(),
+        sourceUrls = sources.map { it.source_url  }
     )
+
+fun WordWithDictionaries.asWordWithDictionaries() =
+    com.goander.dictionary.model.WordWithDictionaries(
+        word = wordEntity.word,
+        dictionaries = dictionaryWithMeaningsAndPhoneticsList.map { it.asDictionary() }
+    )
+
+fun BookmarkedWordEntity.asBookmarkedWord(): BookmarkedWord =
+    BookmarkedWord(word = word)

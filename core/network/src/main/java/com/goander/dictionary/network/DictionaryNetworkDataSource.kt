@@ -4,5 +4,5 @@ import com.goander.dictionary.network.model.NetworkDictionary
 
 
 interface DictionaryNetworkDataSource {
-    public suspend fun getResponse(word: String): NetworkDictionary?
+    public suspend fun getResponse(word: String): List<NetworkDictionary>?
 }

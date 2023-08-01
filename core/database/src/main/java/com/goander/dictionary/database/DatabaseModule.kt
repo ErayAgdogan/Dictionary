@@ -3,6 +3,7 @@ package com.goander.dictionary.database
 import android.content.Context
 import android.util.Log
 import androidx.room.Room
+import androidx.room.withTransaction
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -17,7 +18,6 @@ object DatabaseModule {
     @Provides
     @Singleton
     fun provideDictionaryDatabase(@ApplicationContext context: Context): DictionaryDatabase  {
-        Log.e("dictionary_database", "provided")
         return  Room.databaseBuilder(context, DictionaryDatabase::class.java, "dictionary_database").build()
     }
 

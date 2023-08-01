@@ -1,29 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Dictionary</string>
-    <string name="ictionary">ictionary</string>
     <string name="search">search</string>
     <string name="start">start</string>
     <string name="searching">searching</string>
-    <string name="Start">Start</string>
-    <string name="index">%d.\u0020</string>
-    <string name="example">example:\u0020</string>
-    <string name="back_to_main_screen">back to main screen</string>
-    <string name="title_activity_process_text">ProcessTextActivity</string>
-    <!-- Strings used for fragments for navigation -->
 
-
-    <string name="save_the_word">save the word</string>
-    <string name="no_result">No result</string>
-    <string name="theme">Theme</string>
-    <string name="typography">Typography</string>
-    <string name="select">Select</string>
-    <string name="cancel">Cancel</string>
-    <string-array name="typographies">
-        <item>Default</item>
-        <item>Serif</item>
-        <item>Cursive</item>
-        <item>Monospace</item>
-        <item>Sans Serif</item>
-    </string-array>
 </resources>
