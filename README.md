@@ -1,5 +1,5 @@
 # Dictionary
-Jetpack Compose dictionary app using [free dictionary API](https://dictionaryapi.dev/) as API.
+Jetpack Compose dictionary app using [free dictionary API](https://dictionaryapi.dev/) as API and can cache data for offline use.
 ## Tech Stacks/ Libraries
 1. Jetpack Compose
 1. Material 3
