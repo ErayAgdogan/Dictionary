@@ -6,7 +6,7 @@ import androidx.room.*
     tableName = "antonyms_meaning",
     foreignKeys = [
         ForeignKey(
-            entity = DefinitionEntity::class,
+            entity = MeaningEntity::class,
             parentColumns = ["id"],
             childColumns = ["meaning_id"],
             onDelete = ForeignKey.CASCADE

@@ -10,7 +10,7 @@ import androidx.room.PrimaryKey
     tableName = "synonyms_meaning",
     foreignKeys = [
         ForeignKey(
-            entity = DefinitionEntity::class,
+            entity = MeaningEntity::class,
             parentColumns = ["id"],
             childColumns = ["meaning_id"],
             onDelete = ForeignKey.CASCADE
