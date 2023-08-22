@@ -46,8 +46,15 @@ class DictionaryRepositoryImpl @Inject constructor(
     override fun getDictionaryPage(word: String): Flow<PagingData<WordWithDictionaries>> {
 
         val pager = Pager(
-            config = PagingConfig(pageSize = 50),
-            remoteMediator = DictionaryRemoteMediator(word, dictionaryNetworkDataSource, dictionaryDatabase)
+            config = PagingConfig(
+                pageSize = 1,
+                prefetchDistance = 1,
+            ),
+            remoteMediator = DictionaryRemoteMediator(
+                word,
+                dictionaryNetworkDataSource,
+                dictionaryDatabase
+            )
         ) {
             dictionaryDao.getWordDictionaryPagingSource(word)
         }.flow.map { pagingData ->

@@ -9,4 +9,6 @@
     <string name="url">Url</string>
     <string name="bookmark_the_word">Bookmark the word</string>
     <string name="back_to_main_screen">Back to main screen</string>
+    <string name="use_microphone">Use microphone.</string>
+    <string name="clear_text">Clear text.</string>
 </resources>

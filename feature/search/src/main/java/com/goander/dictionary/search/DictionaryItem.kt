@@ -39,7 +39,7 @@ public fun WordWithDictionaries.asItems(): List<DictionaryItem> =
         add(DictionaryItem.ItemWord(word.capitalize()))
         addAll(dictionaries
             .flatMap { it.phonetics }
-            .distinct()
+            .distinctBy { it.text to it.audio }
             .map { DictionaryItem.ItemPhonetic(it.text, it.audio) }
         )
         var meaningIndex = 0

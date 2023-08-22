@@ -30,6 +30,7 @@ class SearchViewModel @Inject constructor(
     private val networkConnectivityObserver: NetworkConnectivityObserver,
 ): ViewModel() {
 
+
     val networkConnectivity = networkConnectivityObserver.observe()
 
     private val searchKeyword: StateFlow<String> = savedStateHandle.getStateFlow(SEARCH_KEYWORD, "")
@@ -96,7 +97,7 @@ class SearchViewModel @Inject constructor(
 
 
 
-    val searchHistoryPaging: Flow<PagingData<SearchHistoryItem>> =  preSearchText.flatMapLatest {text ->
+    val searchHistoryPaging: Flow<PagingData<SearchHistoryItem>> =  preSearchText.flatMapLatest { text ->
         dictionaryRepository.getSearchHistoryPaging(text).map { searchHistoryPaging ->
             searchHistoryPaging.map { searchHistory ->
                 searchHistory.asItem()
@@ -104,13 +105,21 @@ class SearchViewModel @Inject constructor(
         }
     }
 
+    private val _clearFocus: MutableSharedFlow<Unit> = MutableSharedFlow()
+    val clearFocus: SharedFlow<Unit> = _clearFocus.asSharedFlow()
 
     public fun search(word: String) {
-        savedStateHandle[PRE_SEARCH_TEXT] = word
-        savedStateHandle[SEARCH_KEYWORD] = word
-        viewModelScope.launch {
-            searchHistoryRepository.insertSearchHistory(word)
+        if (word.isNotBlank()) {
+            savedStateHandle[PRE_SEARCH_TEXT] = word
+            savedStateHandle[SEARCH_KEYWORD] = word
+            viewModelScope.launch {
+                searchHistoryRepository.insertSearchHistory(word)
+            }
+            viewModelScope.launch {
+                _clearFocus.emit(Unit)
+            }
         }
+
     }
 
     public fun setPreSearchText(text: String) {

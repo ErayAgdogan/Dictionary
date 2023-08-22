@@ -2,6 +2,7 @@ package com.goander.dictionary.ui.theme
 
 import android.app.Activity
 import android.os.Build
+import android.util.Log
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.dynamicDarkColorScheme
@@ -24,18 +25,20 @@ import com.goander.dictionary.theme.ThemeColorScheme
 fun DictionaryTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
     // Dynamic color is available on Android 12+
-    dynamicColor: Boolean = true,
+    dynamicColor: Boolean = false,
     fontFamily: FontFamily,
     color: Int,
     content: @Composable () -> Unit
 ) {
 
+    Log.e("theme", "color: $color")
     val themeColorScheme = ThemeColorScheme(color)
     val colorScheme = when {
         dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
             val context = LocalContext.current
             if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
         }
+
         darkTheme -> themeColorScheme.DarkColors
         else -> themeColorScheme.LightColors
     }

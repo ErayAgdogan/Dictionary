@@ -8,12 +8,15 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.*
 import androidx.compose.foundation.text.ClickableText
 import androidx.compose.foundation.text.selection.SelectionContainer
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -58,11 +61,18 @@ public fun SearchScreen(
         .collectAsStateWithLifecycle(NetworkConnectivityObserver.Status.Unavailable)
 
     val focusRequester = remember { FocusRequester() }
+    val focusManager = LocalFocusManager.current
+
     LaunchedEffect(Unit) {
         if (showSearchHistory)
             focusRequester.requestFocus()
     }
 
+    LaunchedEffect(key1 = Unit) {
+        searchViewModel.clearFocus.collect {
+            focusManager.clearFocus()
+        }
+    }
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),
@@ -111,6 +121,154 @@ public fun SearchScreen(
 
 }
 
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun TopSearchBar(
+    isConnectionAvailable: Boolean,
+    onSpeechToTextRequest: () -> Unit,
+    focusRequester: FocusRequester,
+    preSearchText: String,
+    setPreSearchText: (String) -> Unit,
+    search: (String) -> Unit,
+    isActive: Boolean,
+    onActiveChanged: (Boolean) -> Unit,
+    navigateToBack: () -> Unit,
+    searchHistoryContent: @Composable ColumnScope.() -> Unit,
+) {
+    val searchBarPadding by animateDpAsState(targetValue = if (isActive) 0.dp else 16.dp)
+    Column(modifier = Modifier
+        .fillMaxWidth()
+        .wrapContentHeight()) {
+
+        ConnectionInformerBanner(isConnectionAvailable)
+
+
+        SearchBar(
+            modifier = Modifier
+                .padding(searchBarPadding)
+
+                .focusRequester(focusRequester),
+            query = preSearchText,
+            onQueryChange = {
+                if (!isActive) onActiveChanged(true)
+                setPreSearchText(it)
+            },
+            onSearch = {
+                if (preSearchText.isNotBlank()) {
+                    onActiveChanged(false)
+                    search(preSearchText)
+                }
+            },
+            active = isActive,
+            onActiveChange = onActiveChanged,
+            leadingIcon = {
+
+                IconButton(
+                    modifier = Modifier,
+                    onClick = navigateToBack) {
+                    Icon(
+                        modifier = Modifier
+                            .size(32.dp),
+                        painter = painterResource(id = DictionaryIcon.Back),
+                        contentDescription = stringResource(id = R.string.back_to_main_screen)
+                    )
+                }
+            },
+            trailingIcon = {
+                if (preSearchText.isEmpty())
+                    IconButton(
+                        onClick = {
+                            onSpeechToTextRequest()
+                        }) {
+
+                        Icon(
+                            modifier = Modifier
+                                .size(32.dp),
+                            painter = painterResource(id = DictionaryIcon.Mic),
+                            contentDescription = stringResource(id = R.string.use_microphone)
+                        )
+                    }
+                else {
+                    IconButton(onClick = { setPreSearchText("") }) {
+                        Icon(
+                            modifier = Modifier.size(32.dp),
+                            imageVector = Icons.Filled.Clear,
+                            contentDescription = stringResource(id = R.string.clear_text)
+                        )
+                    }
+                }
+
+            },
+            content = searchHistoryContent
+        )
+
+        Divider(
+            Modifier
+                .height(2.dp)
+                .fillMaxWidth())
+    }
+
+}
+
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+private fun SearchHistory(
+    preSearchText: String,
+    searchHistoryPaging: Flow<PagingData<SearchHistoryItem>>,
+    onSelected: (String) -> Unit,
+    onDelete: (Long) -> Unit
+) {
+    val searchHistoryPagingItems = searchHistoryPaging.collectAsLazyPagingItems()
+    var firstLoading: Boolean by remember{ mutableStateOf(true) }
+    if (searchHistoryPagingItems.loadState.refresh == LoadState.Loading  && firstLoading){
+        Loading(modifier = Modifier.fillMaxSize())
+    } else {
+        firstLoading = false
+        LazyColumn(modifier = Modifier.fillMaxSize()) {
+
+            items(
+                count = searchHistoryPagingItems.itemCount,
+                key = { (searchHistoryPagingItems[it] as? SearchHistoryItem.ItemSearchHistory?)?.searchId?:-1 },
+
+                ) {
+                val searchHistoryItem = searchHistoryPagingItems[it]
+                when(val item = searchHistoryItem){
+                    is SearchHistoryItem.ItemSearchHistory -> {
+                        SearchResultItem(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    onSelected(item.search)
+                                }
+                                .animateItemPlacement(),
+                            searchResult = item.search,
+                            searchedText = preSearchText,
+                            onDelete = {
+                                onDelete(item.searchId)
+                            })
+
+                    }
+                    null -> {
+
+                    }
+                }
+
+            }
+            if (searchHistoryPagingItems.loadState.append == LoadState.Loading)
+                item {
+                    Loading(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .wrapContentHeight()
+                    )
+                }
+
+
+        }
+    }
+}
+
 @Composable
 private fun DictionaryComposable(
     modifier: Modifier,
@@ -125,13 +283,16 @@ private fun DictionaryComposable(
 ) {
     val dictionaryPageItems = dictionaryPage.collectAsLazyPagingItems()
 
-    if (dictionaryPageItems.loadState.refresh is LoadState.Loading ||
-        dictionaryPageItems.loadState.append is LoadState.Loading ||
-        dictionaryPageItems.loadState.prepend is LoadState.Loading)
+    if (
+        dictionaryPageItems.loadState.refresh is LoadState.Loading
+    ) {
         Loading(modifier)
-    else if (dictionaryPageItems.loadState.append.endOfPaginationReached && dictionaryPageItems.itemCount == 0)
+    } else if (
+        (dictionaryPageItems.loadState.append.endOfPaginationReached) &&
+        dictionaryPageItems.itemCount == 0
+    ) {
         NoResult(modifier = modifier)
-    else if (dictionaryPageItems.itemCount > 0)
+    } else if (dictionaryPageItems.itemCount > 0)
         SelectionContainer {
             LazyColumn(
                 modifier = modifier,
@@ -183,143 +344,6 @@ private fun Loading(modifier: Modifier) {
         modifier = modifier
     ) {
         CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun TopSearchBar(
-    isConnectionAvailable: Boolean,
-    onSpeechToTextRequest: () -> Unit,
-    focusRequester: FocusRequester,
-    preSearchText: String,
-    setPreSearchText: (String) -> Unit,
-    search: (String) -> Unit,
-    isActive: Boolean,
-    onActiveChanged: (Boolean) -> Unit,
-    navigateToBack: () -> Unit,
-    searchHistoryContent: @Composable ColumnScope.() -> Unit,
-) {
-    val searchBarPadding by animateDpAsState(targetValue = if (isActive) 0.dp else 16.dp)
-
-    Column(modifier = Modifier
-        .fillMaxWidth()
-        .wrapContentHeight()) {
-
-        ConnectionInformerBanner(isConnectionAvailable)
-
-
-                SearchBar(
-                    modifier = Modifier
-                        .padding(searchBarPadding)
-
-                        .focusRequester(focusRequester),
-                    query = preSearchText,
-                    onQueryChange = {
-                        if (!isActive) onActiveChanged(true)
-                        setPreSearchText(it)
-                    },
-                    onSearch = {
-                        onActiveChanged(false)
-                        preSearchText.let(search)
-                    },
-                    active = isActive,
-                    onActiveChange = onActiveChanged,
-                    leadingIcon = {
-
-                        IconButton(
-                            modifier = Modifier,
-                            onClick = navigateToBack) {
-                            Icon(
-                                modifier = Modifier
-                                    .size(32.dp),
-                                painter = painterResource(id = DictionaryIcon.Back),
-                                contentDescription = stringResource(id = R.string.back_to_main_screen)
-                            )
-                        }
-                    },
-                    trailingIcon = {
-                        IconButton(
-                            modifier = Modifier,
-                            onClick = {
-                               onSpeechToTextRequest()
-                            }) {
-
-                            Icon(
-                                modifier = Modifier
-                                    .size(32.dp),
-                                painter = painterResource(id = DictionaryIcon.Mic),
-                                contentDescription = ""
-                            )
-                        }
-                    },
-                content = searchHistoryContent
-                )
-
-        Divider(
-            Modifier
-                .height(2.dp)
-                .fillMaxWidth())
-    }
-
-}
-
-@OptIn(ExperimentalFoundationApi::class)
-@Composable
-private fun SearchHistory(
-    preSearchText: String,
-    searchHistoryPaging: Flow<PagingData<SearchHistoryItem>>,
-    onSelected: (String) -> Unit,
-    onDelete: (Long) -> Unit
-) {
-    val searchHistoryPagingItems = searchHistoryPaging.collectAsLazyPagingItems()
-    var firstLoading: Boolean by remember{ mutableStateOf(true) }
-    if (searchHistoryPagingItems.loadState.refresh == LoadState.Loading  && firstLoading
-         ){
-        Loading(modifier = Modifier.fillMaxSize())
-    } else {
-        firstLoading = false
-        LazyColumn(modifier = Modifier.fillMaxSize()) {
-
-            items(
-                count = searchHistoryPagingItems.itemCount,
-                key = { (searchHistoryPagingItems[it] as? SearchHistoryItem.ItemSearchHistory?)?.searchId?:-1 },
-
-            ) {
-                val searchHistoryItem = searchHistoryPagingItems[it]
-                when(val item = searchHistoryItem){
-                    is SearchHistoryItem.ItemSearchHistory -> {
-                        SearchResultItem(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable {
-                                    onSelected(item.search)
-                                }
-                                .animateItemPlacement(),
-                            searchResult = item.search,
-                            searchedText = preSearchText,
-                            onDelete = {
-                                onDelete(item.searchId)
-                            })
-
-                    }
-                    null -> {
-
-                    }
-                }
-
-            }
-            if (searchHistoryPagingItems.loadState.append == LoadState.Loading)
-                item {
-                    Loading(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .wrapContentHeight()
-                    )
-                }
-
-
-        }
     }
 }
 
@@ -375,6 +399,7 @@ private fun Phonetic(text: String, audio: String?) {
             fontWeight = FontWeight.Light
         )
 
+        Spacer(modifier = Modifier.width(8.dp))
         if (audio?.isNotBlank() == true)
             IconButton(
                 modifier = Modifier.size(24.dp),
@@ -404,7 +429,7 @@ private fun playMedia(sourceUrl: String) {
 @Composable
 private fun Meaning(index: String, partOfSpeech: String) {
     Text(
-        modifier = Modifier.padding(vertical = 8.dp),
+        modifier = Modifier.padding(vertical = 16.dp),
         text = index + partOfSpeech,
         color = MaterialTheme.colorScheme.primary,
         fontWeight = FontWeight.Bold,
@@ -505,7 +530,7 @@ private fun Source(sourceUrl: String) {
 @Composable
 private fun Title(title: String) {
     Text(
-        modifier = Modifier.padding(vertical = 8.dp),
+        modifier = Modifier.padding(vertical = 12.dp),
         text = title,
         style = MaterialTheme.typography.titleLarge,
         color = MaterialTheme.colorScheme.primary
