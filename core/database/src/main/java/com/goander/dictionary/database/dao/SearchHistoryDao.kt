@@ -18,7 +18,7 @@ interface SearchHistoryDao{
     @Query("DELETE FROM search_history WHERE `query` = (SELECT `query` FROM search_history WHERE id = :id)")
     public suspend fun deleteSearchById(id: Long)
 
-    @Query("SELECT * FROM search_history WHERE `query` LIKE '%' || :word || '%' GROUP BY `query` ORDER BY id DESC")
+    @Query("SELECT * FROM search_history WHERE `query` LIKE '%' || :word || '%' GROUP BY `query` HAVING id = MAX(id) ORDER BY id DESC")
     public fun getSearchHistoryPaging(word: String): PagingSource<Int, SearchHistoryEntity>
 
     @Query("DELETE FROM search_history")
