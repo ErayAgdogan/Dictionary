@@ -19,11 +19,6 @@ class DictionaryNetworkDataSourceImpl @Inject constructor(): DictionaryNetworkDa
         .create(DictionaryApi::class.java)
 
     override suspend fun getResponse(word: String): List<NetworkDictionary>? {
-        try {
-            return dictionaryApi.getResponse(word).body()
-        }catch (e:Exception) {
-            Log.e("dic_response", "error ${e.message}")
-        }
-       return null
+        return dictionaryApi.getResponse(word).body()
     }
 }

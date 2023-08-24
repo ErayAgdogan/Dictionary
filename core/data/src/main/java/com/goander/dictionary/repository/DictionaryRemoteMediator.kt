@@ -68,10 +68,10 @@ class DictionaryRemoteMediator @Inject constructor(
 
             MediatorResult.Success(endOfPaginationReached = true)
         } catch (e: IOException) {
-            Log.e("DictionaryRemoteMediato", e.message.toString())
+            Log.e("DictionaryRemoteMediato", "", e)
             MediatorResult.Error(e)
         } catch (e: Exception) {
-            Log.e("DictionaryRemoteMediato", e.message.toString())
+            Log.e("DictionaryRemoteMediato","", e)
             MediatorResult.Error(e)
         }
     }
