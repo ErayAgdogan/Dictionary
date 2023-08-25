@@ -12,3 +12,7 @@ Jetpack Compose dictionary app using [free dictionary API](https://dictionaryapi
 1. Paging 3
 1. Hilt
 1. Viewmodel
+## TODO List
+- **Testing**: My knowledge about testing is very limited. I am planning to learn more about testing on android and implement it on this project.
+- **Support Multiple Screens**
+- **Code Documentation**
