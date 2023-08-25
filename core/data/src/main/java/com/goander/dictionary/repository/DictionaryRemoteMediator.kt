@@ -71,8 +71,6 @@ class DictionaryRemoteMediator @Inject constructor(
         } catch (e: IOException) {
             e.printStackTrace()
             Log.e("DictionaryRemoteMediato", "IOException", e)
-            // In case there is any network error
-            // still need to return value from database so return success
             MediatorResult.Error(e)
         } catch (e: Exception) {
             e.printStackTrace()
