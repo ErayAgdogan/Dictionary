@@ -138,7 +138,7 @@ class SearchViewModel @Inject constructor(
 
     fun bookmarkWord() {
         viewModelScope.launch {
-            dictionaryRepository.bookmarkWord(searchKeyword.value)
+            val id = dictionaryRepository.bookmarkWord(searchKeyword.value)
         }
     }
 

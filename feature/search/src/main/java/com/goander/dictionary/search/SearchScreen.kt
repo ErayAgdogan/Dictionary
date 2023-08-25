@@ -1,6 +1,7 @@
 package com.goander.dictionary.search
 
 import android.media.MediaPlayer
+import android.util.Log
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.clickable
@@ -39,6 +40,7 @@ import com.goander.dictionary.ui.NoResult
 import com.goander.dictionary.ui.SearchResultItem
 import com.goander.dictionary.ui.launcherSpeechToText
 import kotlinx.coroutines.flow.Flow
+import java.io.IOException
 import java.util.*
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
@@ -283,16 +285,21 @@ private fun DictionaryComposable(
 ) {
     val dictionaryPageItems = dictionaryPage.collectAsLazyPagingItems()
 
+
     if (
         dictionaryPageItems.loadState.refresh is LoadState.Loading
     ) {
         Loading(modifier)
     } else if (
-        (dictionaryPageItems.loadState.append.endOfPaginationReached) &&
-        dictionaryPageItems.itemCount == 0
+        ((dictionaryPageItems.loadState.append.endOfPaginationReached) &&
+        dictionaryPageItems.itemCount == 0) ||
+        dictionaryPageItems.loadState.refresh is LoadState.Error
     ) {
         NoResult(modifier = modifier)
-    } else if (dictionaryPageItems.itemCount > 0)
+    } else if (
+        dictionaryPageItems.loadState.refresh is LoadState.NotLoading &&
+        dictionaryPageItems.itemCount > 0)
+
         SelectionContainer {
             LazyColumn(
                 modifier = modifier,
@@ -415,14 +422,18 @@ private fun Phonetic(text: String, audio: String?) {
     }
 }
 
-private val mediaPlayer: MediaPlayer = MediaPlayer()
+private val mediaPlayer: MediaPlayer = MediaPlayer().apply {
+    setOnPreparedListener {
+        start()
+    }
+}
 private fun playMedia(sourceUrl: String) {
     mediaPlayer.run {
         reset()
         setDataSource(sourceUrl)
-        prepare()
-        start()
+        prepareAsync()
     }
+
 }
 
 
