@@ -290,15 +290,10 @@ private fun DictionaryComposable(
         dictionaryPageItems.loadState.refresh is LoadState.Loading
     ) {
         Loading(modifier)
-    } else if (
-        ((dictionaryPageItems.loadState.append.endOfPaginationReached) &&
-        dictionaryPageItems.itemCount == 0) ||
-        dictionaryPageItems.loadState.refresh is LoadState.Error
-    ) {
+    } else if (dictionaryPageItems.itemCount == 0) {
+
         NoResult(modifier = modifier)
-    } else if (
-        dictionaryPageItems.loadState.refresh is LoadState.NotLoading &&
-        dictionaryPageItems.itemCount > 0)
+    } else if (dictionaryPageItems.itemCount > 0)
 
         SelectionContainer {
             LazyColumn(

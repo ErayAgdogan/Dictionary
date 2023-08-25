@@ -11,18 +11,20 @@ import com.goander.dictionary.database.entity.BookmarkedWordEntity
 interface BookmarkedWordDao {
 
     @Insert
-    public suspend fun insertBookmarkedWord(bookmarkedWordEntity: BookmarkedWordEntity)
+    public suspend fun insertBookmarkedWord(bookmarkedWordEntity: BookmarkedWordEntity): Long
 
     @Query("DELETE FROM bookmarked_words WHERE word = :word")
     public suspend fun deleteBookmarkedWord(word: String): Int
 
     @Transaction
-    public suspend fun insertIfNotExistsDeleteIfExists(word: String) {
+    public suspend fun insertIfNotExistsDeleteIfExists(word: String): Long {
         // if there is no bookmarked word to delete than insert the word
         // We check whether any row has been deleted by
         // checking the number returned with the delete operation.
         if (deleteBookmarkedWord(word) == 0)
-            insertBookmarkedWord(BookmarkedWordEntity(word = word))
+            return insertBookmarkedWord(BookmarkedWordEntity(word = word))
+        // return 0 if the word was exist and deleted
+        return 0
     }
 
     @Query("SELECT * FROM bookmarked_words WHERE word LIKE '%' || TRIM(:search) || '%' ORDER BY word")

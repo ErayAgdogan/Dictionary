@@ -64,8 +64,9 @@ class DictionaryRepositoryImpl @Inject constructor(
         return pager
     }
 
-    override suspend fun bookmarkWord(word: String) {
-        dictionaryDatabase.bookmarkedWordDao().insertIfNotExistsDeleteIfExists(word)
+    override suspend fun bookmarkWord(word: String): Long {
+        return dictionaryDatabase.bookmarkedWordDao()
+            .insertIfNotExistsDeleteIfExists(word)
     }
 
     override suspend fun deleteAllWordsAndRemoteQueries() {

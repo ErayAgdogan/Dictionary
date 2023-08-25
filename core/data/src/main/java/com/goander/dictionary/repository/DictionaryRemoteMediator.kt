@@ -28,6 +28,7 @@ import com.goander.dictionary.repository.mapping.asSourceEntity
 import com.goander.dictionary.repository.mapping.asSynonymDefinitionEntity
 import com.goander.dictionary.repository.mapping.asSynonymMeaningEntity
 import java.io.IOException
+import java.net.UnknownHostException
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 
@@ -53,25 +54,29 @@ class DictionaryRemoteMediator @Inject constructor(
             if (loadType != LoadType.REFRESH)
                 return MediatorResult.Success(endOfPaginationReached = true)
 
-
             val dictionaryRemoteResponse: List<NetworkDictionary>? = dictionaryNetworkDataSource.getResponse(word)
 
             dictionaryDatabase.withTransaction {
                 dictionaryDao.deleteWord(word)
                 remoteDictionaryQueryDao.deleteDictionaryRemoteQuery(word)
                 remoteDictionaryQueryDao.insert(RemoteDictionaryQueryEntity(query = word))
-                Log.e("DictionaryRemoteMediato", dictionaryRemoteResponse.toString())
+                Log.d("DictionaryRemoteMediato", dictionaryRemoteResponse.toString())
                 if (!dictionaryRemoteResponse.isNullOrEmpty()) {
                     saveDictionary(dictionaryRemoteResponse, word)
                 }
             }
 
+
             MediatorResult.Success(endOfPaginationReached = true)
         } catch (e: IOException) {
-            Log.e("DictionaryRemoteMediato", "", e)
+            e.printStackTrace()
+            Log.e("DictionaryRemoteMediato", "IOException", e)
+            // In case there is any network error
+            // still need to return value from database so return success
             MediatorResult.Error(e)
         } catch (e: Exception) {
-            Log.e("DictionaryRemoteMediato","", e)
+            e.printStackTrace()
+            Log.e("DictionaryRemoteMediato", "Exception", e)
             MediatorResult.Error(e)
         }
     }

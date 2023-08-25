@@ -13,7 +13,7 @@ interface DictionaryRepository {
 
     public fun getDictionaryPage(word: String):  Flow<PagingData<WordWithDictionaries>>
 
-    suspend fun bookmarkWord(word: String)
+    suspend fun bookmarkWord(word: String): Long
 
     suspend fun deleteAllWordsAndRemoteQueries()
 }
