@@ -2,7 +2,7 @@
 Jetpack Compose dictionary app using [free dictionary API](https://dictionaryapi.dev/) as API and can cache data for offline use.
 
 <a href="https://play.google.com/store/apps/details?id=com.goander.dictionary">
-<img src="Available_On_Google_Play.png"/>
+<img src="Available_On_Google_Play.png" target="_blank"/>
 </a>
 
 ## Preview
