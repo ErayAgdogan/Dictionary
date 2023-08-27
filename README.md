@@ -1,5 +1,10 @@
 # Dictionary
 Jetpack Compose dictionary app using [free dictionary API](https://dictionaryapi.dev/) as API and can cache data for offline use.
+
+<a href="https://play.google.com/store/apps/details?id=com.goander.dictionary">
+<img src="Available_On_Google_Play.png"/>
+</a>
+
 ## Preview
 [preview.webm](https://github.com/ErayAgdogan/Dictionary/assets/124050694/77391711-e364-4f1b-887d-b7ee4d7e65ab)
 ## Tech Stacks/ Libraries
